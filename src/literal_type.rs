@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, Neg};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LiteralType {
@@ -125,82 +125,22 @@ impl From<LiteralType> for bool {
     }
 }
 
-// impl PartialEq<LiteralType> for bool {
-//     fn eq(&self, other: &LiteralType) -> bool {
-//         match other {
-//             LiteralType::Bool(b) => b == self,
-//             LiteralType::Int(i) => (*i != 0) == *self
-//         }
-//     }
+impl From<LiteralType> for i64 {
+    fn from(lit: LiteralType) -> Self {
+        match lit {
+            LiteralType::Bool(b) => b.into(),
+            LiteralType::Int(i) => i
+        }
+    }
+}
 
-//     fn ne(&self, other: &LiteralType) -> bool {
-//         match other {
-//             LiteralType::Bool(b) => b != self,
-//             LiteralType::Int(i) => (*i != 0) != *self
-//         }
-//     }
-// }
+impl Neg for LiteralType {
+    type Output = LiteralType;
 
-// impl PartialEq<LiteralType> for i64 {
-//     fn eq(&self, other: &LiteralType) -> bool {
-//         match other {
-//             LiteralType::Bool(b) => *b == (*self != 0),
-//             LiteralType::Int(i) => i == self
-//         }
-//     }
-
-//     fn ne(&self, other: &LiteralType) -> bool {
-//         match other {
-//             LiteralType::Bool(b) => *b != (*self != 0),
-//             LiteralType::Int(i) => i != self
-//         }
-//     }
-// }
-
-// impl PartialEq<i64> for LiteralType {
-//     fn eq(&self, other: &i64) -> bool {
-//         match self {
-//             LiteralType::Bool(b) => *b == (*other != 0),
-//             LiteralType::Int(i) => (*i != 0) == (*other != 0)
-//         }
-//     }
-
-//     fn ne(&self, other: &i64) -> bool {
-//         match self {
-//             LiteralType::Bool(b) => *b != (*other != 0),
-//             LiteralType::Int(i) => (*i != 0) != (*other != 0)
-//         }
-//     }
-// }
-
-// impl PartialEq<bool> for LiteralType {
-//     fn eq(&self, other: &bool) -> bool {
-//         match self {
-//             LiteralType::Bool(b) => b == other,
-//             LiteralType::Int(i) => (*i != 0) == *other 
-//         }
-//     }
-
-//     fn ne(&self, other: &bool) -> bool {
-//         match self {
-//             LiteralType::Bool(b) => b != other,
-//             LiteralType::Int(i) => (*i != 0) != *other 
-//         }
-//     }
-// }
-
-// impl PartialEq for LiteralType {
-//     fn eq(&self, other: &Self) -> bool {
-//         match self {
-//             Self::Bool(b) => b == other,
-//             Self::Int(i) => i == other
-//         }
-//     }
-
-//     fn ne(&self, other: &Self) -> bool {
-//         match self {
-//             Self::Bool(b) => b != other,
-//             Self::Int(i) => i != other
-//         }
-//     }
-// }
+    fn neg(self) -> Self::Output {
+        match self {
+            LiteralType::Bool(b) => LiteralType::Int(-(b as i64)),
+            LiteralType::Int(i) => LiteralType::Int(-i)
+        }
+    }
+}
