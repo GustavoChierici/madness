@@ -47,9 +47,9 @@ fn main() {
         Expr::IfElseExpr(
             expr1.clone(),
             Rc::new(RefCell::new(Expr::ArithmeticExpr(
-                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Int(5))))),
-                std::ops::Mul::mul,
-                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Int(3)))))
+                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::String("Hello".to_string()))))),
+                std::ops::Add::add,
+                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::String("World".to_string())))))
             ))),
             Some(Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Int(2)))))),
         )
