@@ -1,6 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, ops::Add};
 
 pub mod literal_type;
+use crate::literal_type::ToLiteral;
 
 #[derive(Debug)]
 pub enum Expr {
@@ -34,30 +35,73 @@ impl Expr {
     }
 }
 
-fn main() {
-    let expr1 = Rc::new(RefCell::new(
-        Expr::IfElseExpr(
-            Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Bool(true))))),
-            Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Bool(true))))),
-            Some(Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Bool(false))))))
-        )
-    ));
+pub trait ToExpr {
+    fn to_expr(&self) -> Rc<RefCell<Expr>>;
+}
 
-    let expr2 = Rc::new(RefCell::new(
-        Expr::IfElseExpr(
-            expr1.clone(),
-            Rc::new(RefCell::new(Expr::ArithmeticExpr(
-                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::String("Hello".to_string()))))),
-                std::ops::Add::add,
-                Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::String("World".to_string())))))
-            ))),
-            Some(Rc::new(RefCell::new(Expr::Literal(Some(literal_type::LiteralType::Int(2)))))),
-        )
-    ));
+impl ToExpr for Rc<RefCell<Expr>> {
+    fn to_expr(&self) -> Rc<RefCell<Expr>> {
+        self.clone()
+    }
+}
+
+impl<T> ToExpr for T where T: ToLiteral + Copy {
+    fn to_expr(&self) -> Rc<RefCell<Expr>> {
+        Rc::new(RefCell::new(Expr::Literal(Some(self.to_literal()))))
+    }
+}
+
+impl ToExpr for Option<literal_type::LiteralType> {
+    fn to_expr(&self) -> Rc<RefCell<Expr>> {
+        Rc::new(RefCell::new(Expr::Literal(self.clone())))
+    }
+}
+
+macro_rules! expr {
+    ($(None)?) => { literal!(None) };
+    ($lit:expr) => { literal!($lit) };
+    ($lhs:expr,$op:expr,$rhs:expr) => { 
+        Rc::new(RefCell::new(Expr::ArithmeticExpr(
+            $lhs.to_expr(), 
+            $op,
+            $rhs.to_expr()
+        )))
+    };
+    (If $cond:expr => $if_true:expr; Else => $if_false:expr) => { 
+        Rc::new(RefCell::new(Expr::IfElseExpr(
+            $cond.to_expr(), 
+            $if_true.to_expr(),
+            Some($if_false.to_expr())
+        )))
+    };
+    (If $cond:expr => $if_true:expr) => { 
+        Rc::new(RefCell::new(Expr::IfElseExpr(
+            $cond.to_expr(), 
+            $if_true.to_expr(),
+            None
+        )))
+    }
+}
+
+fn main() {
+    let expr1 = expr!{
+        If true => true;
+        Else => false
+    };
+
+    let expr2 = expr!{
+        If expr1.clone() => expr!("Hello", Add::add, " World!");
+        Else => 2
+    };
 
     println!("1: {:?}", expr1);
     println!("2: {:?}", expr2);
     expr2.borrow_mut().evaluate();
     println!("1: {:?}", expr1);
     println!("2: {:?}", expr2);
+
+    println!("{:?}", expr!{
+        If true => expr!(5, Add::add, 7);
+        Else => 12
+    }.borrow_mut().evaluate());
 }

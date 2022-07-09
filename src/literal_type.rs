@@ -7,6 +7,34 @@ pub enum LiteralType {
     String(String)
 }
 
+pub trait ToLiteral {
+    fn to_literal(self) -> LiteralType;
+}
+
+impl ToLiteral for i64 {
+    fn to_literal(self) -> LiteralType {
+        LiteralType::Int(self)
+    }
+}
+
+impl ToLiteral for bool {
+    fn to_literal(self) -> LiteralType {
+        LiteralType::Bool(self)
+    }
+}
+
+impl ToLiteral for String {
+    fn to_literal(self) -> LiteralType {
+        LiteralType::String(self)
+    }
+}
+
+impl ToLiteral for &str {
+    fn to_literal(self) -> LiteralType {
+        LiteralType::String(self.to_string())
+    }
+}
+
 impl Add<LiteralType> for i64 {
     type Output = LiteralType;
 
