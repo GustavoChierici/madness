@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc, ops::Add};
 
 pub mod literal_type;
+
 use crate::literal_type::ToLiteral;
 
 #[derive(Debug)]
@@ -8,6 +9,7 @@ pub enum Expr {
     ArithmeticExpr(Rc<RefCell<Expr>>, fn(literal_type::LiteralType, literal_type::LiteralType) -> literal_type::LiteralType, Rc<RefCell<Expr>>),
     Literal(Option<literal_type::LiteralType>),
     IfElseExpr(Rc<RefCell<Expr>>, Rc<RefCell<Expr>>, Option<Rc<RefCell<Expr>>>),
+    FunctionCall(fn(Vec<Option<literal_type::LiteralType>>) -> Rc<RefCell<Expr>>, Vec<Rc<RefCell<Expr>>>)
 } 
 
 impl Expr {
@@ -27,6 +29,9 @@ impl Expr {
                         None
                     }
                 }
+            },
+            Self::FunctionCall(function, args) => {
+                function(args.iter().map(|x| x.borrow_mut().evaluate()).collect()).borrow_mut().evaluate()
             }
         };
 
@@ -58,8 +63,8 @@ impl ToExpr for Option<literal_type::LiteralType> {
 }
 
 macro_rules! expr {
-    ($(None)?) => { literal!(None) };
-    ($lit:expr) => { literal!($lit) };
+    ($(None)?) => { None.to_expr() };
+    ($lit:expr) => { $lit.to_expr() };
     ($lhs:expr,$op:expr,$rhs:expr) => { 
         Rc::new(RefCell::new(Expr::ArithmeticExpr(
             $lhs.to_expr(), 
@@ -79,6 +84,12 @@ macro_rules! expr {
             $cond.to_expr(), 
             $if_true.to_expr(),
             None
+        )))
+    };
+    (apply $fun:expr => $($args:expr),*) => {
+        Rc::new(RefCell::new(Expr::FunctionCall(
+            $fun,
+            vec!($($args.to_expr()),*)
         )))
     }
 }
@@ -100,8 +111,16 @@ fn main() {
     println!("1: {:?}", expr1);
     println!("2: {:?}", expr2);
 
-    println!("{:?}", expr!{
-        If true => expr!(5, Add::add, 7);
-        Else => 12
-    }.borrow_mut().evaluate());
+    println!("{:?}", expr!(apply |v| { 
+        let mut sum = 0.to_literal();
+
+        for elem in v.iter() {
+            sum = sum + elem.clone().unwrap();
+        }
+
+        println!("{:?}", v);
+        Some(sum).to_expr()
+    }  => 5, 10).borrow_mut().evaluate());
+
+
 }
